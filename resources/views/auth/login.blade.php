@@ -54,13 +54,6 @@
                     LOGIN
                 </button>
             </form>
-
-            <div class="mx-auto mt-8 max-w-2xl rounded-2xl border border-blue-100 bg-blue-50 p-5 text-sm text-blue-800">
-                <p class="mb-2 font-black">Akun Demo</p>
-                <p><strong>Admin:</strong> admin@admin.test / password</p>
-                <p><strong>Guru:</strong> siti@guru.test / password</p>
-                <p><strong>Siswa:</strong> andi@siswa.test / password</p>
-            </div>
         </div>
     </div>
 </div>

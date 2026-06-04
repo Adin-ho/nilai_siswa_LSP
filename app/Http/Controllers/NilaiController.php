@@ -14,7 +14,7 @@ class NilaiController extends Controller
         $user = auth()->user();
         $search = $request->get('search');
 
-        $nilais = Nilai::with(['siswa.kelas', 'mataPelajaran'])
+        $nilais = Nilai::with(['siswa.kelas', 'mataPelajaran.guru'])
             ->when($user->role === 'guru', function ($query) use ($user) {
                 $query->whereHas('mataPelajaran', function ($q) use ($user) {
                     $q->where('guru_id', $user->guru_id);
@@ -46,7 +46,9 @@ class NilaiController extends Controller
 
         $user = auth()->user();
 
-        $siswas = Siswa::with('kelas')->orderBy('nama_siswa')->get();
+        $siswas = Siswa::with('kelas')
+            ->orderBy('nama_siswa')
+            ->get();
 
         $mataPelajarans = MataPelajaran::when($user->role === 'guru', function ($query) use ($user) {
                 $query->where('guru_id', $user->guru_id);
@@ -62,7 +64,8 @@ class NilaiController extends Controller
         $this->pastikanBolehKelolaNilai();
 
         $data = $this->validateData($request);
-        $this->pastikanGuruMengajarMapel($data['mata_pelajaran_id']);
+
+        $this->pastikanGuruMengajarMapel((int) $data['mata_pelajaran_id']);
 
         $data = $this->hitungNilai($data);
 
@@ -74,7 +77,9 @@ class NilaiController extends Controller
 
     public function show(Nilai $nilai)
     {
-        return redirect()->route('nilai.edit', $nilai);
+        $this->pastikanBolehAksesNilai($nilai);
+
+        return redirect()->route('nilai.index');
     }
 
     public function edit(Nilai $nilai)
@@ -84,7 +89,9 @@ class NilaiController extends Controller
 
         $user = auth()->user();
 
-        $siswas = Siswa::with('kelas')->orderBy('nama_siswa')->get();
+        $siswas = Siswa::with('kelas')
+            ->orderBy('nama_siswa')
+            ->get();
 
         $mataPelajarans = MataPelajaran::when($user->role === 'guru', function ($query) use ($user) {
                 $query->where('guru_id', $user->guru_id);
@@ -101,7 +108,8 @@ class NilaiController extends Controller
         $this->pastikanBolehAksesNilai($nilai);
 
         $data = $this->validateData($request);
-        $this->pastikanGuruMengajarMapel($data['mata_pelajaran_id']);
+
+        $this->pastikanGuruMengajarMapel((int) $data['mata_pelajaran_id']);
 
         $data = $this->hitungNilai($data);
 
@@ -132,6 +140,20 @@ class NilaiController extends Controller
             'nilai_tugas' => ['required', 'numeric', 'min:0', 'max:100'],
             'nilai_uts' => ['required', 'numeric', 'min:0', 'max:100'],
             'nilai_uas' => ['required', 'numeric', 'min:0', 'max:100'],
+        ], [
+            'siswa_id.required' => 'Siswa wajib dipilih.',
+            'mata_pelajaran_id.required' => 'Mata pelajaran wajib dipilih.',
+            'semester.required' => 'Semester wajib dipilih.',
+            'tahun_ajaran.required' => 'Tahun ajaran wajib diisi.',
+            'nilai_tugas.required' => 'Nilai tugas wajib diisi.',
+            'nilai_uts.required' => 'Nilai UTS wajib diisi.',
+            'nilai_uas.required' => 'Nilai UAS wajib diisi.',
+            'nilai_tugas.min' => 'Nilai tugas minimal 0.',
+            'nilai_uts.min' => 'Nilai UTS minimal 0.',
+            'nilai_uas.min' => 'Nilai UAS minimal 0.',
+            'nilai_tugas.max' => 'Nilai tugas maksimal 100.',
+            'nilai_uts.max' => 'Nilai UTS maksimal 100.',
+            'nilai_uas.max' => 'Nilai UAS maksimal 100.',
         ]);
     }
 
@@ -177,6 +199,8 @@ class NilaiController extends Controller
 
     private function pastikanBolehAksesNilai(Nilai $nilai): void
     {
+        $nilai->loadMissing('mataPelajaran');
+
         $user = auth()->user();
 
         if ($user->role === 'admin') {

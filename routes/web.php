@@ -40,8 +40,11 @@ Route::middleware('auth')->group(function () {
 
         Route::resource('mata-pelajaran', MataPelajaranController::class)
             ->parameters(['mata-pelajaran' => 'mataPelajaran']);
+    });
 
+    Route::middleware('role:admin,guru')->group(function () {
         Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
+        Route::get('/laporan/export-csv', [LaporanController::class, 'exportCsv'])->name('laporan.export-csv');
     });
 
     Route::resource('nilai', NilaiController::class)
